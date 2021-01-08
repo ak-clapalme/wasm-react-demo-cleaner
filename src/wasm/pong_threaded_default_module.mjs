@@ -1,7 +1,5 @@
 /* eslint-disable */
-
 var Module = (function() {
-  //var _scriptDir = '../pong_threaded.wasm';
   //var _scriptDir = import.meta.url;
   var _scriptDir = performance.getEntries().slice(-1)[0].name;
 
@@ -255,7 +253,8 @@ var read_,
 // ENVIRONMENT_IS_NODE.
 if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
   if (ENVIRONMENT_IS_WORKER) { // Check worker, not web, since window could be polyfilled
-    scriptDirectory = "../pong_threaded.worker.js";
+    //scriptDirectory = self.location.href;
+    scriptDirectory = "pong_threaded_default_module.worker.js"
   } else if (document.currentScript) { // web
     scriptDirectory = document.currentScript.src;
   }
@@ -1627,7 +1626,7 @@ function createExportWrapper(name, fixedasm) {
 }
 
 
-var wasmBinaryFile = 'http://localhost:8080/health/wasm';
+var wasmBinaryFile = '../pong_threaded_default_module.wasm';
 // if (!isDataURI(wasmBinaryFile)) {
 //   wasmBinaryFile = locateFile(wasmBinaryFile);
 // }
@@ -1697,6 +1696,9 @@ function createWasm() {
     wasmModule = module;
     // Instantiation is synchronous in pthreads and we assert on run dependencies.
     if (!ENVIRONMENT_IS_PTHREAD) {
+      // // PTHREAD_POOL_DELAY_LOAD==1 (or no preloaded pool in use): do not wait up for the Workers to
+      // // instantiate the Wasm module, but proceed with main() immediately.
+      // removeRunDependency('wasm-instantiate');
       var numWorkersToLoad = PThread.unusedWorkers.length;
       PThread.unusedWorkers.forEach(function(w) { PThread.loadWasmModuleToWorker(w, function() {
         // PTHREAD_POOL_DELAY_LOAD==0: we wanted to synchronously wait until the Worker pool
@@ -1779,7 +1781,7 @@ var tempI64;
 var ASM_CONSTS = {
   5294: function($0, $1) {setTimeout(function() { _do_emscripten_dispatch_to_thread($0, $1); }, 0);}
 };
-function drawCanvas(height,width){ let body = document.getElementsByTagName("tableTennis")[0]; let canvas = document.createElement("canvas"); body.appendChild(canvas); canvas.setAttribute("id", "canvas"); canvas.setAttribute("height", height); canvas.setAttribute("width", width); }
+function drawCanvas(height,width){ body = document.getElementsByTagName("body")[0]; canvas = document.createElement("canvas"); body.appendChild(canvas); canvas.setAttribute("id", "canvas"); canvas.setAttribute("height", height); canvas.setAttribute("width", width); }
 function initPthreadsJS(){ PThread.initRuntime(); }
 
 
@@ -1935,12 +1937,12 @@ function initPthreadsJS(){ PThread.initRuntime(); }
     }
   var PThread={MAIN_THREAD_ID:1,mainThreadInfo:{schedPolicy:0,schedPrio:0},unusedWorkers:[],runningWorkers:[],initMainThreadBlock:function() {
         assert(!ENVIRONMENT_IS_PTHREAD);
-  
+
         var pthreadPoolSize = 2;
         // Start loading up the Worker pool, if requested.
         for(var i = 0; i < pthreadPoolSize; ++i) {
           PThread.allocateUnusedWorker();
-        }
+        }  
       },initRuntime:function() {
   
         PThread.mainThreadBlock = _malloc(232);
@@ -2156,8 +2158,8 @@ function initPthreadsJS(){ PThread.initRuntime(); }
         // Allow HTML module to configure the location where the 'worker.js' file will be loaded from,
         // via Module.locateFile() function. If not specified, then the default URL 'worker.js' relative
         // to the main html file is loaded.
-        //var pthreadMainJs = locateFile('pong_threaded.worker.js');
-        var pthreadMainJs = "../pong_threaded.worker.js";
+        //var pthreadMainJs = locateFile('pong_threaded_default_module.worker.js');
+        var pthreadMainJs = "../pong_threaded_default_module.worker.js";
         PThread.unusedWorkers.push(new Worker(pthreadMainJs));
       },getNewWorker:function() {
         if (PThread.unusedWorkers.length == 0) {
